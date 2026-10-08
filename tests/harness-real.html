@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Kite chain harness (asli Kite 2026 DOM)</title>
+<style>
+body{font:13px sans-serif;margin:0;padding:16px 460px 16px 16px;background:#fff;color:#333}
+table{border-collapse:collapse}th,td{padding:4px 10px;border-bottom:1px solid #eee;text-align:right}
+.strike{font-weight:600;background:#f4f4f4;text-align:center}
+.pct{color:#2e9d5a;font-size:11px}
+#flag{margin:8px 0;padding:6px;background:#e8f5e9}
+#flag.bad{background:#ffebee;color:#b71c1c;font-weight:700}
+</style>
+</head>
+<body>
+<!-- Fake Kite: structure ANUMAAN hai, asli Kite DOM P0 spike me confirm hoga -->
+<div class="option-chain-container">
+  <div class="chain-header">
+    <span class="instrument">NIFTY 50</span>
+    <span class="underlying">Spot <span class="last-price" id="spot"></span></span>
+    <span class="expiry-selector">Expiry <span class="selected" id="exp"></span></span>
+  </div>
+  <div id="flag">Kite real-order window: not opened</div>
+  <table>
+    <!-- Kite 2026 jaisa: header ka ek column neeche 2 cells (% change + value) -->
+    <thead><tr><!----> <!----> <th colspan="2" data-field="call.oi" draggable="false" scope="col" class="oi right"><!----> <span data-tooltip-placement="top">
+								OI (in lakhs)
+							</span> <!----> <!----></th><th colspan="2" data-field="call.ltp" draggable="false" scope="col" class="right left-border"><!----> <span data-tooltip-placement="top">
+								Call LTP
+							</span> <!----> <!----></th><th colspan="1" data-field="strike" draggable="false" scope="col" aria-sort="none" class="center sortable"><!----> <button type="button" aria-label="Sort by Strike" class="su-table-sort-handle" data-tooltip-placement="top">
+								Strike
+							</button> <!----> <!----></th><th colspan="2" data-field="put.ltp" draggable="false" scope="col" class="left right-border"><!----> <span data-tooltip-placement="top">
+								Put LTP
+							</span> <!----> <!----></th><th colspan="2" data-field="put.oi" draggable="false" scope="col" class="oi left"><!----> <span data-tooltip-placement="top">
+								OI (in lakhs)
+							</span> <!----> <!----></th></tr></thead>
+    <tbody id="rows"></tbody>
+  </table>
+</div>
+<script>
+// ---------- chrome.* stub ----------
+// test ke liye: window.name me preset storage (reload ke baad bhi), warna khaali
+const mem = (() => { try { return JSON.parse(window.name || "{}").kpmem || {}; } catch (e) { return {}; } })(); window.__events = [];
+window.chrome = { storage: { local: { get: async k => ({ [k]: mem[k] && JSON.parse(JSON.stringify(mem[k])) }), set: async o => { Object.assign(mem, JSON.parse(JSON.stringify(o))); } } },
+  runtime: { getURL: p => '../extension/' + p, sendMessage: async m => {
+    if (m.type === 'kp-event') window.__events.push(m.ev);
+    // AI: asli background module (sync/ai.js), sirf network fake (window.__aiFetch)
+    if (/^kp-ai/.test(m.type)) {
+      const deps = { get: async k => mem[k], set: async (k, v) => { mem[k] = JSON.parse(JSON.stringify(v)); }, now: () => Date.now(), fetch: (u, o) => window.__aiFetch(u, o) };
+      if (m.type === 'kp-ai-status') return KPAI.status(deps);
+      if (m.type === 'kp-ai-key') return KPAI.setKey(deps, m.key).then(s => ({ ok: true, s }), e => ({ ok: false, error: e.message }));
+      if (m.type === 'kp-ai-ask') return KPAI.ask(deps, m.req);
+      if (m.type === 'kp-ai-cfg') return KPAI.setCfg(deps, m.p || {}).then(s => ({ ok: true, s }), e => ({ ok: false, error: e.message }));
+      if (m.type === 'kp-ai-check') return KPAI.check(deps);
+    }
+    return null; } } };
+window.__aiReqs = [];
+window.__aiFetch = async (u, o) => {
+  const TXT = '**Position ka haal:** tumhara trade theek chal raha hai.\n- Theta tumhare saath hai\n- SL abhi door hai\n\nAgli baar: 10 baje tak wait karo.';
+  if (/generativelanguage/.test(u) && /\/models\?/.test(u)) return { ok: true, status: 200, json: async () => ({ models: ['gemini-2.5-flash', 'gemini-2.5-pro'].map(n => ({ name: 'models/' + n, supportedGenerationMethods: ['generateContent'] })) }) };
+  window.__aiReqs.push(Object.assign({ url: u }, JSON.parse(o.body))); await new Promise(r => setTimeout(r, 300));
+  if (/generativelanguage/.test(u)) return { ok: true, status: 200, json: async () => ({ modelVersion: 'gemini-2.5-flash', candidates: [{ content: { parts: [{ text: TXT }] } }] }) };
+  return { ok: true, status: 200, json: async () => ({ content: [{ type: 'text', text: TXT }] }) }; };
+</script>
+<script src="../extension/sync/ai.js"></script>
+<script src="../extension/engine/pricing.js"></script>
+<script>
+// harness: market hamesha "open" (sirf test ke liye)
+KP.isMarketOpen = () => true;
+// ---------- fake Kite chain ----------
+const EXP = KP.nextWeekday(Date.now(), 2), [y, m, d] = EXP.split('-');
+document.getElementById('exp').textContent = (+d) + ' ' + ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][+m - 1] + ' ' + y;
+window.F = 25012; window.IV = 0.13;
+function draw() {
+  const T = Math.max(1e-7, (KP.expiryCloseMs(EXP) - Date.now()) / KP.YEAR_MS), c = Math.round(F / 50) * 50, body = document.getElementById('rows');
+  if (body.dataset.c != c) {                                     // Kite jaisa: strikes badle to rows dobara
+    body.dataset.c = c; body.innerHTML = '';
+    for (let K = c - 600; K <= c + 600; K += 50) { const tr = document.createElement('tr'); tr.innerHTML = '<td class="oi-spacer call"></td> <td class="oi right call"><span class="text-xxsmall oi-change"></span> <span class="oi-value"></span></td> <td class="ltp-change call right left-border"><span class="text-xxsmall pct-change"></span></td> <td class="ltp call right"><span class="last-price"></span></td> <td class="strike center"><div class="grid"><button type="button" class="strike-val btn-plain"></button></div><div class="oi-visualization call"></div></td> <td class="ltp put right"><span class="last-price"></span></td> <td class="ltp-change put left right-border"><span class="text-xxsmall"></span></td> <td class="oi put"><span class="oi-value"></span> <span class="text-xxsmall oi-change"></span></td> <td class="oi-spacer put"></td>'; tr.dataset.k = K; body.appendChild(tr); }
+  }
+  for (const tr of body.rows) {
+    const K = +tr.dataset.k, v = IV * (1 - 1.2 * (K - F) / F + 6 * ((K - F) / F) ** 2), ce = KP.bs('CE', F, K, T, v), pe = KP.bs('PE', F, K, T, v), t = tr.cells;
+    const pc = () => ((Math.random() - 0.5) * 200).toFixed(2) + '%', q = (i, s) => t[i].querySelector(s);
+    q(1, '.oi-change').textContent = pc(); q(1, '.oi-value').textContent = (Math.random() * 99).toFixed(2); q(2, 'span').textContent = pc();
+    q(3, '.last-price').textContent = KP.r05(ce.p).toFixed(2); q(4, 'button').textContent = K;
+    q(5, '.last-price').textContent = KP.r05(pe.p).toFixed(2); q(6, 'span').textContent = pc(); q(7, '.oi-value').textContent = (Math.random() * 99).toFixed(2); q(7, '.oi-change').textContent = pc();
+  }
+  document.getElementById('spot').textContent = (F - 8).toLocaleString('en-IN', { minimumFractionDigits: 2 });
+}
+draw(); setInterval(() => { F += (Math.random() - 0.5) * 4; draw(); }, 1000);
+// Kite ka "row click → order window" simulate: hamara fake button yahan tak nahi pahunchna chahiye
+document.getElementById('rows').addEventListener('click', e => { const f = document.getElementById('flag'); f.textContent = 'Kite real-order window OPENED (bad!)'; f.className = 'bad'; window.__kiteOrderOpened = true; });
+</script>
+<script src="../extension/engine/book.js"></script>
+<script src="../extension/engine/analytics.js"></script>
+<script src="../extension/engine/coach.js"></script>
+<script src="../extension/engine/options.js"></script>
+<script src="../extension/engine/day.js"></script>
+<script src="../extension/engine/risk.js"></script>
+<script src="../extension/engine/morning.js"></script>
+<script src="../extension/engine/pa.js"></script>
+<script src="../extension/engine/oishift.js"></script>
+<script>
+// harness: phase test se control (window.__phase), warna asli ghadi
+{ const orig = KP.morning.phase; KP.morning.phase = t => window.__phase || orig(t); window.__phase = 'decide'; }
+</script>
+<script src="../extension/kite/selectors.js"></script>
+<script src="../extension/kite/chainReader.js"></script>
+<script src="../extension/kite/chainButtons.js"></script>
+<script src="../extension/feed/demoFeed.js"></script>
+<script src="../extension/ui/panel.js"></script>
+<script src="../extension/app.js"></script>
+</body>
+</html>

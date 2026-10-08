@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kite Practice Teacher</title>
+<style>
+:root{--bg:#f5f6f8;--panel:#fff;--line:#e6e8eb;--text:#444a52;--muted:#8a9099;--head:#1f2328;--blue:#387ed1;--blue-soft:#eaf2fc;--orange:#f05c2c;--orange-soft:#fdeee8;--green:#2e9d5a;--red:#d9463e;--chip:#eef0f2;--hover:#f3f7fd}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#131416;--panel:#1c1d20;--line:#2c2e33;--text:#cfd3d8;--muted:#878c94;--head:#f2f3f5;--blue-soft:#1b2a40;--orange-soft:#3a2219;--chip:#2a2c31;--hover:#202a38}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:13px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+button,input,select{font:inherit;color:inherit}
+.num{font-variant-numeric:tabular-nums}.pos{color:var(--green)}.neg{color:var(--red)}.mut{color:var(--muted)}
+header{display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding:10px 16px;background:var(--panel);border-bottom:1px solid var(--line)}
+header h1{font-size:15px;margin:0;color:var(--head)}
+header .sp{margin-left:auto}
+main{padding:14px 16px;max-width:1280px;margin:0 auto}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:12px 14px;margin-bottom:12px}
+.card h2{font-size:13.5px;margin:0 0 8px;color:var(--head)}
+.form{display:flex;flex-wrap:wrap;gap:8px;align-items:end}
+.form label{display:flex;flex-direction:column;gap:3px;font-size:11.5px;color:var(--muted)}
+input,select{border:1px solid var(--line);background:var(--panel);border-radius:4px;padding:6px 8px;min-width:0}
+.btn{border:1px solid var(--line);background:var(--panel);border-radius:4px;padding:6px 12px;font-weight:500;cursor:pointer}
+.btn:hover{background:var(--hover)}.btn.primary{background:var(--blue);border-color:var(--blue);color:#fff}
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;margin-bottom:12px}
+.tiles div{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:10px 12px}
+.tiles span{display:block;font-size:11px;color:var(--muted)}.tiles b{font-size:18px;color:var(--head)}
+.tw{overflow-x:auto}
+table{border-collapse:collapse;width:100%}
+th{font-size:11.5px;color:var(--muted);font-weight:500;text-align:right;padding:7px 8px;border-bottom:1px solid var(--line);white-space:nowrap;cursor:pointer;user-select:none}
+td{padding:7px 8px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}
+th:first-child,td:first-child{text-align:left}
+tbody tr{cursor:pointer}tbody tr:hover td{background:var(--hover)}
+tr.sel td{background:var(--blue-soft)}
+.lv{display:inline-block;min-width:22px}
+.code{font:600 15px ui-monospace,Consolas,monospace;background:var(--orange-soft);color:var(--orange);padding:2px 8px;border-radius:4px;letter-spacing:1px}
+.tag{font-size:10.5px;padding:1px 6px;border-radius:3px;font-weight:600}
+.k-order{background:var(--blue-soft);color:var(--blue)}.k-adjust,.k-ic{background:var(--orange-soft);color:var(--orange)}.k-alert{background:#fff3cd;color:#7a5b00}.k-settle{background:var(--chip);color:var(--head)}.k-snapshot,.k-join,.k-reset{background:var(--chip);color:var(--muted)}
+.k-plan{background:var(--blue-soft);color:var(--blue)}.k-risk{background:#fde8e7;color:#b3261e}.k-review{background:#e6f4ea;color:#1e7a3d}
+.empty{padding:24px;text-align:center;color:var(--muted)}
+.err{color:var(--red);font-size:12px}
+#tl td:nth-child(2),#tl td:nth-child(3),.tl-h th:nth-child(n+2){text-align:left}
+svg.spark{width:100%;height:120px;display:block}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+<header>
+  <h1>Kite Practice · Teacher dashboard</h1>
+  <select id="classSel" hidden></select>
+  <span id="classCode"></span>
+  <select id="range"><option value="1">Aaj</option><option value="7" selected>7 din</option><option value="0">Sab</option></select>
+  <span class="sp mut" id="upd"></span>
+  <button class="btn" id="logout" hidden>Logout</button>
+</header>
+<main>
+  <section class="card" id="cfgCard" hidden>
+    <h2>1. Supabase project</h2>
+    <div class="form">
+      <label>Supabase URL<input id="cUrl" placeholder="https://xxxx.supabase.co" size="34"></label>
+      <label>Anon key<input id="cKey" placeholder="eyJ..." size="40"></label>
+      <button class="btn primary" id="cSave">Save</button>
+    </div>
+    <p class="mut">Supabase → Project Settings → API se dono copy karo. Pehle <code>supabase/schema.sql</code> SQL Editor me run kar lena.</p>
+  </section>
+
+  <section class="card" id="authCard" hidden>
+    <h2>2. Teacher login</h2>
+    <div class="form">
+      <label>Email<input id="aEmail" type="email" autocomplete="username"></label>
+      <label>Password<input id="aPass" type="password" autocomplete="current-password"></label>
+      <button class="btn primary" id="aIn">Login</button><button class="btn" id="aUp">Naya account</button>
+      <button class="btn" id="cEdit">Supabase badlo</button>
+    </div>
+    <p class="err" id="aErr"></p>
+  </section>
+
+
+  <div id="dash" hidden>
+    <div class="tiles" id="tiles"></div>
+    <section class="card"><h2>Students</h2><div class="tw"><table>
+      <thead><tr><th data-s="name">Student</th><th data-s="seen">Last seen</th><th data-s="pnl">Paper P&amp;L</th><th data-s="effect">Adjustments ka asar</th><th data-s="level">Abhi</th>
+        <th data-s="pick">Aaj ka pick</th><th data-s="pickOk">Pick sahi</th><th data-s="slHits">SL hit</th><th data-s="slReact">SL reaction</th><th data-s="early">Early</th>
+        <th data-s="a1">🟡</th><th data-s="a2">🟠</th><th data-s="a3">🔴</th><th data-s="react">Avg reaction</th><th data-s="ignored">Ignore</th><th data-s="adj">Adjust</th><th data-s="best">Coach pick</th><th data-s="orders">Orders</th></tr></thead>
+      <tbody id="stuBody"></tbody></table></div>
+      <p class="mut">Aaj ka pick = subah lock kiya strategy (score / coach ka best). Pick sahi = din ke review me choice sahi nikla (sahi / total din). SL reaction = SL hit ke baad position band karne me lagi der. Early = 10 baje se pehle entry.
+        Avg reaction = 🟠/🔴 alert ke baad pehla fake order kitni der me. Ignore = 30 min tak kuch nahi kiya. Coach pick = adjustments me se kitni baar coach ka top option chuna.</p></section>
+    <section class="card" id="detail" hidden><h2 id="dName"></h2><svg class="spark" id="spark" role="img" aria-label="Paper P&L over time"></svg>
+      <div class="tw"><table><thead class="tl-h"><tr><th>Time</th><th>Event</th><th>Detail</th></tr></thead><tbody id="tl"></tbody></table></div></section>
+  </div>
+  <section class="card" id="newClassCard" hidden>
+    <h2>Nayi class</h2>
+    <div class="form"><label>Class ka naam<input id="nName" placeholder="Options batch Oct"></label><button class="btn primary" id="nGo">Class banao</button></div>
+    <p class="mut">Code students ko do. Wo extension → Settings me Supabase URL, anon key, ye code aur apna naam daal ke "Class join karo" dabayenge.</p>
+    <p class="err" id="nErr"></p>
+  </section>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+(function(){
+'use strict';
+const $=id=>document.getElementById(id);
+const LS='kp_teacher_cfg',LVI=['','🟡','🟠','🔴'];
+const SN={ic:'Iron Condor',bullPut:'Bull Put',bearCall:'Bear Call',bullCall:'Bull Call',bearPut:'Bear Put',straddle:'Long Straddle',wait:'Wait',noTrade:'No trade',manual:'Manual'};
+const DTN={range:'Range',mildBull:'Trend up',mildBear:'Trend down',wild:'Volatile',event:'Event',unclear:'Unclear',trendUp:'Trend up',trendDown:'Trend down',mixed:'Mixed'};
+const sn=id=>esc(SN[id]||id||'—');
+const nf0=new Intl.NumberFormat('en-IN',{maximumFractionDigits:0});
+const rs=n=>(n<0?'−₹':'₹')+nf0.format(Math.abs(Math.round(n)));
+const rsS=n=>n==null?'—':(n>0?'+':'')+rs(n);
+const cls=n=>n>0.5?'pos':n<-0.5?'neg':'';
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const when=t=>new Date(t).toLocaleString('en-IN',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit',hour12:false});
+let sb=null,classes=[],cur=null,students=[],events=[],stats=[],sel=null,sortKey='pnl',sortDir=-1,timer=null;
+
+function cfg(){try{return JSON.parse(localStorage.getItem(LS)||'null');}catch(e){return null;}}
+function show(id,on){$(id).hidden=!on;}
+
+async function boot(){
+  const c=cfg();
+  if(!c){show('cfgCard',true);show('authCard',false);return;}
+  sb=supabase.createClient(c.url,c.key);
+  const {data:{session}}=await sb.auth.getSession();
+  if(!session){show('cfgCard',false);show('authCard',true);show('dash',false);show('newClassCard',false);show('logout',false);show('classSel',false);return;}
+  show('cfgCard',false);show('authCard',false);show('logout',true);
+  await loadClasses();
+}
+async function loadClasses(){
+  const {data,error}=await sb.from('classes').select('id,code,name,created_at').order('created_at',{ascending:false});
+  if(error){alert(error.message);return;}
+  classes=data;show('newClassCard',true);
+  const s=$('classSel');s.hidden=!classes.length;
+  s.innerHTML=classes.map(c=>'<option value="'+c.id+'">'+esc(c.name||c.code)+'</option>').join('');
+  const last=localStorage.getItem('kp_teacher_class');
+  if(classes.some(c=>c.id===last))s.value=last;
+  if(classes.length)selectClass(s.value);else{show('dash',false);$('classCode').innerHTML='';}
+}
+function selectClass(id){
+  cur=classes.find(c=>c.id===id);localStorage.setItem('kp_teacher_class',id);sel=null;
+  $('classCode').innerHTML='Class code <span class="code">'+esc(cur.code)+'</span>';
+  show('dash',true);refresh();clearInterval(timer);timer=setInterval(refresh,30000);
+}
+async function fetchAll(q){const out=[];for(let from=0;;from+=1000){const {data,error}=await q().range(from,from+999);if(error)throw error;out.push(...data);if(data.length<1000)break;}return out;}
+async function refresh(){
+  if(!cur)return;
+  try{
+    students=(await sb.from('students').select('id,name,joined_at').eq('class_id',cur.id).order('name')).data||[];
+    const days=+$('range').value,since=days?new Date(Date.now()-days*864e5).toISOString():'1970-01-01';
+    const ids=students.map(s=>s.id);
+    events=ids.length?await fetchAll(()=>sb.from('events').select('student_id,ts,kind,payload').in('student_id',ids).gte('ts',since).order('ts')):[];
+    compute();render();$('upd').textContent='Updated '+new Date().toLocaleTimeString('en-IN',{hour12:false});
+  }catch(e){$('upd').textContent='Error: '+e.message;}
+}
+function compute(){
+  const by=new Map(students.map(s=>[s.id,[]]));events.forEach(e=>by.get(e.student_id)&&by.get(e.student_id).push(e));
+  stats=students.map(s=>{
+    const ev=by.get(s.id),r={id:s.id,name:s.name,joined:s.joined_at,seen:null,pnl:null,effect:null,level:0,a1:0,a2:0,a3:0,react:null,ignored:0,adj:0,best:0,orders:0,
+      pick:null,pickP:null,pickOk:null,days:0,okDays:0,slHits:0,slReact:null,early:0,ev};
+    const trades=ev.filter(e=>e.kind==='order').map(e=>Date.parse(e.ts));let rsum=0,rn=0,ssum=0,sn2=0;
+    const today=new Date().toLocaleDateString('en-CA',{timeZone:'Asia/Kolkata'});
+    for(const e of ev){
+      const p=e.payload||{},t=Date.parse(e.ts);r.seen=e.ts;
+      if(e.kind==='plan'&&p.ev==='pick'&&new Date(t).toLocaleDateString('en-CA',{timeZone:'Asia/Kolkata'})===today){r.pick=p.id;r.pickP=p;}
+      if(e.kind==='plan'&&p.ev==='enter'&&p.early)r.early++;
+      if(e.kind==='review'){r.days++;if(p.pickOk)r.okDays++;}
+      if(e.kind==='risk'&&(p.ev==='sl'||p.ev==='legsl'))r.slHits++;
+      if(e.kind==='risk'&&p.ev==='closed')(p.hits||[]).forEach(h=>{if(h.t==='sl'&&h.r!=null){ssum+=h.r;sn2++;}});
+      if(e.kind==='order')r.orders++;
+      if(e.kind==='adjust'&&p.id!=null&&p.title&&!/kuch mat/i.test(p.title)){r.adj++;if(p.best)r.best++;}
+      if(e.kind==='snapshot'){r.pnl=p.pnl;r.effect=p.actual!=null&&p.shadow!=null?p.actual-p.shadow:null;r.level=p.level||0;}
+      if(e.kind==='settle'){r.pnl=p.pnl;if(p.actual!=null&&p.shadow!=null)r.effect=p.actual-p.shadow;r.level=0;}
+      if(e.kind==='alert'&&p.lv>=1&&p.lv<=3){r['a'+p.lv]++;
+        if(p.lv>=2){const nx=trades.find(x=>x>=t);if(nx==null||nx-t>1800e3)r.ignored++;if(nx!=null){rsum+=(nx-t)/60e3;rn++;}}}
+    }
+    r.react=rn?rsum/rn:null;r.slReact=sn2?ssum/sn2/60:null;r.pickOk=r.days?r.okDays/r.days:null;return r;});
+}
+function render(){
+  const act=stats.filter(r=>r.seen&&Date.now()-Date.parse(r.seen)<10*60e3).length,withP=stats.filter(r=>r.pnl!=null);
+  const avg=withP.length?withP.reduce((s,r)=>s+r.pnl,0)/withP.length:null,ign=stats.reduce((s,r)=>s+r.ignored,0),danger=stats.filter(r=>r.level>=3).length;
+  $('tiles').innerHTML='<div><span>Students</span><b>'+students.length+'</b></div><div><span>Active (10 min)</span><b>'+act+'</b></div>'+
+    '<div><span>Avg paper P&amp;L</span><b class="'+cls(avg)+'">'+rsS(avg)+'</b></div><div><span>Abhi 🔴 Danger me</span><b class="'+(danger?'neg':'')+'">'+danger+'</b></div>'+
+    '<div><span>Alerts ignore (total)</span><b>'+ign+'</b></div>';
+  const rows=stats.slice().sort((a,b)=>{const x=a[sortKey],y=b[sortKey];if(x==null&&y==null)return 0;if(x==null)return 1;if(y==null)return -1;return (x>y?1:x<y?-1:0)*sortDir;});
+  $('stuBody').innerHTML=rows.length?rows.map(r=>'<tr data-id="'+r.id+'"'+(r.id===sel?' class="sel"':'')+'><td>'+esc(r.name)+'</td><td class="mut">'+(r.seen?when(r.seen):'—')+'</td>'+
+    '<td class="num '+cls(r.pnl)+'">'+rsS(r.pnl)+'</td><td class="num '+cls(r.effect)+'">'+rsS(r.effect)+'</td><td><span class="lv">'+(r.level?LVI[r.level]:'✅')+'</span></td>'+
+    '<td>'+(r.pick?sn(r.pick)+' <span class="mut">'+r.pickP.score+(r.pickP.best===r.pick?' 👍':' / '+sn(r.pickP.best)+' '+r.pickP.bestScore)+'</span>':'<span class="mut">—</span>')+'</td>'+
+    '<td class="num">'+(r.days?r.okDays+'/'+r.days:'—')+'</td><td class="num '+(r.slHits?'neg':'')+'">'+r.slHits+'</td>'+
+    '<td class="num '+(r.slReact!=null&&r.slReact>5?'neg':'')+'">'+(r.slReact==null?'—':r.slReact.toFixed(1)+' min')+'</td><td class="num '+(r.early?'neg':'')+'">'+r.early+'</td>'+
+    '<td class="num">'+r.a1+'</td><td class="num">'+r.a2+'</td><td class="num">'+r.a3+'</td><td class="num">'+(r.react==null?'—':r.react.toFixed(0)+' min')+'</td>'+
+    '<td class="num '+(r.ignored?'neg':'')+'">'+r.ignored+'</td><td class="num">'+r.adj+'</td><td class="num">'+(r.adj?r.best+'/'+r.adj:'—')+'</td><td class="num">'+r.orders+'</td></tr>').join('')
+    :'<tr><td colspan="18" class="empty">Abhi koi student join nahi hua. Class code share karo.</td></tr>';
+  if(sel)detail(sel);
+}
+function evText(e){const p=e.payload||{};switch(e.kind){
+  case'order':return p.side+' '+p.qty+' × '+esc(p.inst)+' @ '+(+p.px).toFixed(2)+(p.model?' (model)':'');
+  case'ic':return 'Iron condor '+(p.legs||[]).map(l=>(l.qty>0?'+':'')+l.qty+' '+l.K+l.type).join(', ')+' · credit '+(+p.credit).toFixed(2);
+  case'adjust':return esc(p.title)+(p.score!=null?' · score '+p.score:'')+(p.best?' 👍':'')+' · level '+(LVI[p.level]||'—');
+  case'alert':return (LVI[p.lv]||'')+' '+esc(p.title)+(p.spot?' @ '+nf0.format(p.spot):'');
+  case'snapshot':return 'P&L '+rsS(p.pnl)+' · spot '+nf0.format(p.spot)+' · IV '+p.iv+'% · '+(LVI[p.level]||'✅');
+  case'settle':return 'Expiry '+p.expiry+' settle @ '+nf0.format(p.spot)+' · P&L '+rsS(p.pnl);
+  case'plan':return p.ev==='pick'?'Pick: <b>'+sn(p.id)+'</b> (score '+p.score+') · socha: '+esc(DTN[p.reason]||'—')+' · coach: '+sn(p.best)+' '+p.bestScore+' / '+esc(DTN[p.dt]||'—')+' · '+esc(p.phase)+(p.changed?' · '+p.changed+'× badla':'')
+    :'Entry: <b>'+sn(p.strategy)+'</b> '+(p.unit!=null?'premium '+rs(p.unit)+' · SL '+rs(-p.sl)+' · target '+rs(p.tgt)+' · R:R 1:'+p.rr:'')+(p.early?' · ⚠ early':'')+(p.followed===false?' · pick se alag':'');
+  case'risk':return p.ev==='sl'?'🔴 SL hit · P&L '+rsS(p.pnl):p.ev==='target'?'🎯 Target hit · P&L '+rsS(p.pnl):p.ev==='edit'?'SL/target badla'+(p.widened?' · ⚠ SL door khiskaya':'')
+    :p.ev==='legsl'||p.ev==='legtgt'?(p.ev==='legsl'?'🔴 Leg SL hit: ':'🎯 Leg target hit: ')+esc(p.inst)+' ('+esc(p.side)+' @ '+p.avg+', '+(p.ev==='legsl'?'SL '+p.sl:'target '+p.tgt)+', LTP '+p.ltp+') · '+rsS(p.pnl)+(p.auto?' · auto exit':'')
+    :p.ev==='legedit'?'Leg SL badla: '+esc(p.inst)+' → '+(p.sl==null?'band':p.sl)+(p.widened?' · ⚠ SL door khiskaya':'')
+    :p.ev==='legexit'?'Leg kaati (SL hit ke '+Math.round(p.reacted/60)+' min baad): '+esc(p.inst)
+    :'Trade band ('+sn(p.strategy)+') · P&L '+rsS(p.pnl)+((p.hits||[]).length?' · hits: '+p.hits.map(h=>h.t+(h.r!=null?' '+Math.round(h.r/60)+'m':'')).join(', '):'');
+  case'review':return 'Review '+esc(p.date)+': din = '+esc(DTN[p.actual]||p.actual)+' · pick '+sn(p.pick)+(p.pickOk?' ✅':' ❌')+' · coach '+sn(p.best)+(p.coachOk?' ✅':' ❌');
+  default:return e.kind;}}
+function detail(id){
+  const r=stats.find(x=>x.id===id);if(!r){show('detail',false);return;}
+  show('detail',true);$('dName').textContent=r.name+' · timeline';
+  $('tl').innerHTML=r.ev.filter(e=>e.kind!=='snapshot').slice().reverse().slice(0,300).map(e=>'<tr><td class="mut">'+when(e.ts)+'</td><td><span class="tag k-'+e.kind+'">'+e.kind+'</span></td><td>'+evText(e)+'</td></tr>').join('')||'<tr><td colspan="3" class="empty">Koi event nahi.</td></tr>';
+  const pts=r.ev.filter(e=>e.kind==='snapshot'||e.kind==='settle').map(e=>[Date.parse(e.ts),e.payload.pnl]).filter(p=>p[1]!=null),svg=$('spark');
+  if(pts.length<2){svg.innerHTML='<text x="50%" y="50%" text-anchor="middle" fill="currentColor" opacity=".5" font-size="12">P&amp;L history abhi kam hai</text>';return;}
+  const W=svg.clientWidth||800,H=120,P=8,x0=pts[0][0],x1=pts[pts.length-1][0],ys=pts.map(p=>p[1]),lo=Math.min(0,...ys),hi=Math.max(0,...ys),sp=hi-lo||1;
+  const X=t=>P+(t-x0)/(x1-x0||1)*(W-2*P),Y=v=>P+(hi-v)/sp*(H-2*P),last=ys[ys.length-1];
+  svg.setAttribute('viewBox','0 0 '+W+' '+H);
+  svg.innerHTML='<line x1="'+P+'" x2="'+(W-P)+'" y1="'+Y(0)+'" y2="'+Y(0)+'" stroke="currentColor" opacity=".25"/>'+
+    '<polyline fill="none" stroke-width="2" stroke="'+(last>=0?'var(--green)':'var(--red)')+'" points="'+pts.map(p=>X(p[0]).toFixed(1)+','+Y(p[1]).toFixed(1)).join(' ')+'"/>'+
+    '<text x="'+(W-P)+'" y="14" text-anchor="end" font-size="12" fill="currentColor">'+rsS(last)+'</text>';
+}
+
+$('cSave').onclick=()=>{const url=$('cUrl').value.trim().replace(/\/+$/,''),key=$('cKey').value.trim();if(!/^https:\/\/[a-z0-9-]+\.supabase\.co$/i.test(url)||!key){alert('Sahi URL aur anon key daalo');return;}localStorage.setItem(LS,JSON.stringify({url,key}));boot();};
+$('cEdit').onclick=()=>{const c=cfg()||{};$('cUrl').value=c.url||'';$('cKey').value=c.key||'';localStorage.removeItem(LS);show('authCard',false);show('cfgCard',true);};
+$('aIn').onclick=async()=>{$('aErr').textContent='';const {error}=await sb.auth.signInWithPassword({email:$('aEmail').value.trim(),password:$('aPass').value});if(error)$('aErr').textContent=error.message;else boot();};
+$('aUp').onclick=async()=>{$('aErr').textContent='';const {data,error}=await sb.auth.signUp({email:$('aEmail').value.trim(),password:$('aPass').value});if(error)$('aErr').textContent=error.message;else if(!data.session)$('aErr').textContent='Email confirm karo, phir Login.';else boot();};
+$('logout').onclick=async()=>{await sb.auth.signOut();clearInterval(timer);cur=null;boot();};
+$('classSel').onchange=e=>selectClass(e.target.value);
+$('range').onchange=refresh;
+$('nGo').onclick=async()=>{$('nErr').textContent='';const abc='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';let code='';const rnd=crypto.getRandomValues(new Uint32Array(6));for(const v of rnd)code+=abc[v%abc.length];
+  const {error}=await sb.from('classes').insert({code,name:$('nName').value.trim()});if(error){$('nErr').textContent=error.message;return;}$('nName').value='';await loadClasses();$('classSel').value=classes[0].id;selectClass(classes[0].id);};
+$('stuBody').onclick=e=>{const tr=e.target.closest('tr[data-id]');if(!tr)return;sel=tr.dataset.id;render();$('detail').scrollIntoView({behavior:'smooth',block:'start'});};
+document.querySelector('thead').onclick=e=>{const k=e.target.dataset.s;if(!k)return;if(sortKey===k)sortDir=-sortDir;else{sortKey=k;sortDir=k==='name'?1:-1;}render();};
+boot();
+})();
+</script>
+</body>
+</html>

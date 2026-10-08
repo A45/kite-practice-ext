@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Kite real DOM fixture</title>
+<style>
+/* layout approx (asli Kite CSS nahi hai) — sirf geometry ke liye */
+body{font:13px sans-serif;margin:0;padding:16px}
+table{border-collapse:collapse}th,td{padding:4px 10px;text-align:right;border-bottom:1px solid #eee}
+.strike{text-align:center;font-weight:600}.oi-visualization{display:none}
+</style>
+</head>
+<body>
+<!-- Asli kite.zerodha.com option chain HTML (user ne 2026-10-07 ko copy kiya), kuch rows. Stale deep ITM LTP (21300 CE 1191.35) jaan-boojh ke rakha hai. -->
+<div class="option-chain"><div class="table-wrapper"><table aria-label="Option chain"><thead><tr><!----> <!----> <th colspan="2" data-field="call.oi" draggable="false" scope="col" class="oi right"><!----> <span data-tooltip-placement="top">
+								OI (in lakhs)
+							</span> <!----> <!----></th><th colspan="2" data-field="call.ltp" draggable="false" scope="col" class="right left-border"><!----> <span data-tooltip-placement="top">
+								Call LTP
+							</span> <!----> <!----></th><th colspan="1" data-field="strike" draggable="false" scope="col" aria-sort="none" class="center sortable"><!----> <button type="button" aria-label="Sort by Strike" class="su-table-sort-handle" data-tooltip-placement="top">
+								Strike
+							</button> <!----> <!----></th><th colspan="2" data-field="put.ltp" draggable="false" scope="col" class="left right-border"><!----> <span data-tooltip-placement="top">
+								Put LTP
+							</span> <!----> <!----></th><th colspan="2" data-field="put.oi" draggable="false" scope="col" class="oi left"><!----> <span data-tooltip-placement="top">
+								OI (in lakhs)
+							</span> <!----> <!----></th></tr></thead> <tbody id="rows"></tbody></table></div></div>
+<script>
+// [strike, callLtp, callChg%, putLtp, putChg%] — asli values (user ka copy)
+const R = [[21100, '2655.45', '0.00%', '2.30', '-8.00%'], [21300, '1191.35', '0.00%', '2.85', '-6.56%'], [21500, '1071.20', '-13.80%', '4.20', '-2.33%'],
+  [22000, '603.95', '-20.70%', '16.85', '35.89%'], [22400, '267.00', '-31.87%', '76.90', '64.49%'], [22500, '198.95', '-36.30%', '109.35', '65.31%'], [22550, '169.60', '-38.30%', '129.60', '62.41%'],
+  [22600, '142.80', '-40.51%', '152.75', '60.96%'], [22650, '118.60', '-43.05%', '179.00', '60.25%'], [22700, '97.45', '-45.25%', '207.05', '56.50%'], [22750, '78.95', '-47.77%', '238.30', '54.69%'],
+  [22800, '62.80', '-50.06%', '272.40', '52.18%'], [23000, '23.40', '-56.67%', '433.15', '42.20%']];
+document.getElementById('rows').innerHTML = R.map(([k, c, cc, p, pc]) => `<tr tabindex="0" data-uid="${k}" class=""><!----> <td class="oi-spacer call itm"></td> <td class="oi right call itm"><span class="text-xxsmall oi-change">
+					0.00%
+				</span> <span class="oi-value">
+					0.00
+				</span></td> <td class="ltp-change call right left-border itm"><span class="text-xxsmall pct-change">
+					${cc}
+				</span></td> <td class="ltp call right itm"><span class="last-price">${c}</span></td> <td class="strike center"><div class="grid"><!----> <button type="button" aria-label="Strike ${k}. Scroll to at-the-money strike." class="strike-val btn-plain">
+					${k}
+				</button> <!----></div> <div class="oi-visualization call" style="width: 1%; bottom: 0px;"></div> <div class="oi-visualization put" style="width: 3.56892%; bottom: 0px;"></div> <!----> <!----></td> <td class="ltp put right otm"><span class="last-price">${p}</span></td> <td class="ltp-change put left right-border otm"><span class="text-xxsmall text-red">
+					${pc}
+				</span></td> <td class="oi put otm"><span class="oi-value">
+					8.66
+				</span> <span class="text-xxsmall oi-change text-green">
+					52.65%
+				</span></td> <td class="oi-spacer put otm"></td> <!----></tr>`).join(' ');
+</script>
+<script>window.KP = {};</script>
+<script src="../extension/engine/pricing.js"></script>
+<script src="../extension/kite/selectors.js"></script>
+<script src="../extension/kite/chainReader.js"></script>
+</body>
+</html>
