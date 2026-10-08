@@ -1,4 +1,4 @@
-# Kite Practice (Paper) – Iron Condor Coach
+# Kite Practice (Paper) 
 
 Chrome extension jo **kite.zerodha.com** ke upar paper trading karwata hai: prices live Kite option chain se aate hain, lekin har order **FAKE** hota hai. Iske saath ek Adjustment Coach hai (🟡 Watch / 🟠 Adjust / 🔴 Danger alerts, "Kya karu?" options with score, original-vs-tumhara P&L) aur ek teacher dashboard.
 
